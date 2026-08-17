@@ -1,0 +1,19 @@
+{
+  "download_date": "2026-08-17",
+  "countries": {
+    "HKG": "Hong Kong SAR, China",
+    "SGP": "Singapore",
+    "THA": "Thailand",
+    "MYS": "Malaysia",
+    "VNM": "Vietnam",
+    "IDN": "Indonesia"
+  },
+  "indicators": {
+    "NY.GDP.PCAP.CD": "gdp_per_capita_current_usd",
+    "IT.NET.USER.ZS": "internet_users_pct",
+    "NY.GDP.MKTP.CD": "gdp_current_usd",
+    "SP.URB.TOTL.IN.ZS": "urban_population_pct"
+  },
+  "period_requested": "2024",
+  "source_note": "Values are retrieved from World Bank API endpoints recorded in the CSV."
+}
