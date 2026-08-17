@@ -12,11 +12,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[1]
+SCRIPT_PATH = Path(__file__).resolve()
+ROOT = SCRIPT_PATH.parent.parent if SCRIPT_PATH.parent.name == "src" else SCRIPT_PATH.parent
 RAW_FILE = ROOT / "data" / "raw" / "world_bank_wdi_observations.csv"
-PROCESSED_DIR = ROOT / "data" / "processed"
-OUTPUT_DIR = ROOT / "outputs"
-FIGURE_DIR = ROOT / "figures"
+if not RAW_FILE.exists():
+    RAW_FILE = ROOT / "world_bank_wdi_observations.csv"
+PROCESSED_DIR = ROOT / "data" / "processed" if (ROOT / "data").exists() else ROOT
+OUTPUT_DIR = ROOT / "outputs" if (ROOT / "outputs").exists() else ROOT
+FIGURE_DIR = ROOT / "figures" if (ROOT / "figures").exists() else ROOT
 
 for directory in (PROCESSED_DIR, OUTPUT_DIR, FIGURE_DIR):
     directory.mkdir(parents=True, exist_ok=True)
@@ -45,6 +48,34 @@ SCENARIOS = {
         "purchasing_power": 0.20,
         "digital_readiness": 0.15,
         "urban_retail_context": 0.20,
+        "economic_scale": 0.45,
+    },
+}
+
+# These are transparent strategy assumptions, not empirically estimated elasticities.
+BUSINESS_MODELS = {
+    "international_brand": {
+        "label": "International jewellery brand",
+        "strategy_assumption": "Higher-control brand building prioritises premium demand context and concentrated retail experience.",
+        "purchasing_power": 0.45,
+        "digital_readiness": 0.10,
+        "urban_retail_context": 0.30,
+        "economic_scale": 0.15,
+    },
+    "small_independent": {
+        "label": "Small / independent jewellery business",
+        "strategy_assumption": "Capital-constrained expansion prioritises digital validation and concentrated addressable customers over national scale.",
+        "purchasing_power": 0.20,
+        "digital_readiness": 0.45,
+        "urban_retail_context": 0.30,
+        "economic_scale": 0.05,
+    },
+    "ecommerce_cross_border": {
+        "label": "E-commerce / cross-border jewellery business",
+        "strategy_assumption": "Digital-led expansion prioritises online reach and scalable market context while retaining purchasing power as a monetisation proxy.",
+        "purchasing_power": 0.10,
+        "digital_readiness": 0.40,
+        "urban_retail_context": 0.05,
         "economic_scale": 0.45,
     },
 }
@@ -99,10 +130,37 @@ def main() -> None:
     )
     pivot["rank_stability"] = np.where(pivot["rank_range"] == 0, "stable", "scenario-sensitive")
 
+    # Run the same inputs through three commercial-model assumptions.
+    for model, specification in BUSINESS_MODELS.items():
+        weights = {metric: specification[metric] for metric in ("purchasing_power", "digital_readiness", "urban_retail_context", "economic_scale")}
+        if not np.isclose(sum(weights.values()), 1.0):
+            raise ValueError(f"Weights for {model} must sum to 1.0")
+        score_name = f"score_{model}"
+        pivot[score_name] = sum(pivot[metric] * weight for metric, weight in weights.items())
+        pivot[f"rank_{model}"] = pivot[score_name].rank(ascending=False, method="min").astype(int)
+
     output = pivot.reset_index().rename(columns={"index": "country_code"})
     output = output.sort_values("rank_balanced")
     output.to_csv(OUTPUT_DIR / "market_priority_scores.csv", index=False)
     output.to_csv(PROCESSED_DIR / "market_signal_panel.csv", index=False)
+
+    business_columns = ["country_code", "country", "purchasing_power", "digital_readiness", "urban_retail_context", "economic_scale"]
+    for model in BUSINESS_MODELS:
+        business_columns.extend([f"score_{model}", f"rank_{model}"])
+    output[business_columns].to_csv(OUTPUT_DIR / "business_model_priority_scores.csv", index=False)
+
+    business_weights = pd.DataFrame(
+        [
+            {
+                "model": model,
+                "label": specification["label"],
+                "strategy_assumption": specification["strategy_assumption"],
+                **{metric: specification[metric] for metric in ("purchasing_power", "digital_readiness", "urban_retail_context", "economic_scale")},
+            }
+            for model, specification in BUSINESS_MODELS.items()
+        ]
+    )
+    business_weights.to_csv(OUTPUT_DIR / "business_model_assumptions.csv", index=False)
 
     coverage_columns = [
         "country",

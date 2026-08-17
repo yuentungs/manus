@@ -14,8 +14,9 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-ROOT = Path(__file__).resolve().parents[1]
-RAW_DIR = ROOT / "data" / "raw"
+SCRIPT_PATH = Path(__file__).resolve()
+ROOT = SCRIPT_PATH.parent.parent if SCRIPT_PATH.parent.name == "src" else SCRIPT_PATH.parent
+RAW_DIR = ROOT / "data" / "raw" if (ROOT / "data").exists() else ROOT
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 
 COUNTRIES = {

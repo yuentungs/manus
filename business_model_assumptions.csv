@@ -1,0 +1,4 @@
+model,label,strategy_assumption,purchasing_power,digital_readiness,urban_retail_context,economic_scale
+international_brand,International jewellery brand,Higher-control brand building prioritises premium demand context and concentrated retail experience.,0.45,0.1,0.3,0.15
+small_independent,Small / independent jewellery business,Capital-constrained expansion prioritises digital validation and concentrated addressable customers over national scale.,0.2,0.45,0.3,0.05
+ecommerce_cross_border,E-commerce / cross-border jewellery business,Digital-led expansion prioritises online reach and scalable market context while retaining purchasing power as a monetisation proxy.,0.1,0.4,0.05,0.45
